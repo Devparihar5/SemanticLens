@@ -5,17 +5,27 @@ import shutil
 from ultralytics import solutions
 from PIL import Image
 
-# Create temp directories
-if "temp_data_dir" not in st.session_state:
-    st.session_state.temp_data_dir = tempfile.mkdtemp()
-    st.session_state.temp_index_dir = tempfile.mkdtemp()
+# Create temp directories safely
+def get_temp_dirs():
+    if "temp_data_dir" not in st.session_state:
+        try:
+            st.session_state.temp_data_dir = tempfile.mkdtemp()
+            st.session_state.temp_index_dir = tempfile.mkdtemp()
+        except Exception:
+            # Fallback to current directory if temp creation fails
+            st.session_state.temp_data_dir = "temp_data"
+            st.session_state.temp_index_dir = "temp_index"
+            os.makedirs(st.session_state.temp_data_dir, exist_ok=True)
+            os.makedirs(st.session_state.temp_index_dir, exist_ok=True)
 
 # Initialize the searcher with temp directory
 @st.cache_resource
 def init_searcher():
+    get_temp_dirs()
     return solutions.VisualAISearch(data=st.session_state.temp_data_dir, device="cpu")
 
 def upload_page():
+    get_temp_dirs()
     st.title("📤 SemanticLens - Upload Images")
     st.write("Upload your images to search through them")
     
@@ -48,6 +58,7 @@ def upload_page():
                     st.info("Images ready for search! Go to Search page.")
 
 def search_page():
+    get_temp_dirs()
     st.title("🔍 SemanticLens - Search Images")
     
     # Check if images exist
